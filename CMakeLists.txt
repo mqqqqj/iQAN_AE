@@ -1,4 +1,7 @@
 cmake_minimum_required(VERSION 3.9)
+#指定c和c++编译器
+set(CMAKE_C_COMPILER "/home/mqj/bin/gcc-13.2.0/output/bin/gcc")
+set(CMAKE_CXX_COMPILER "/home/mqj/bin/gcc-13.2.0/output/bin/g++")
 project(PANNS LANGUAGES CXX)
 
 # Verbose Makefile
@@ -8,17 +11,24 @@ set(CMAKE_VERBOSE_MAKEFILE ON)
 set(CMAKE_CXX_STANDARD 14)
 
 # Boost
-find_package(Boost REQUIRED)
+# find_package(Boost REQUIRED)
 
 # OpenMP
 find_package(OpenMP REQUIRED)
-
+if (OPENMP_FOUND)
+    set (CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${OpenMP_C_FLAGS}")
+    set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS}")
+    include_directories(${OpenMP_CXX_INCLUDE_DIRS})
+else()
+    message(FATAL_ERROR "no OpenMP supprot")
+endif()
 # Debug Options
 if (${CMAKE_BUILD_TYPE} MATCHES "Debug")
     set(CXX_OPTION ${CXX_OPTION} -O0)
 endif()
 if (NOT ${CMAKE_BUILD_TYPE} MATCHES "Release")
-    set(CXX_OPTION ${CXX_OPTION} -Wall -Wextra -pedantic -Werror)
+#     set(CXX_OPTION ${CXX_OPTION} -Wall -Wextra -pedantic -Werror)
+set(CXX_OPTION ${CXX_OPTION} -Ofast -lboost -march=native -mavx -mavx2 -msse4.2 -fpic -w)
 endif()
 
 set(CXX_OPTION ${CXX_OPTION} -march=native)

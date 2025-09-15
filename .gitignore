@@ -5,6 +5,9 @@ venv/
 build/
 local_stuff/
 
+# VSCode
+.vscode/
+
 # MacOS
 .DS_Store
 
