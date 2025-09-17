@@ -40,6 +40,7 @@ namespace PANNS
         idi width_ = 0; // NSG largest degree
         idi ep_ = 0;    // Start point
         std::vector<std::vector<PANNS::idi>> groundtruth;
+        float ub_ratio = 0;
         //    std::vector<dataf> data_load_;
         //    std::vector<dataf> queries_load_;
         //    std::vector< std::vector<dataf> > data_load_;

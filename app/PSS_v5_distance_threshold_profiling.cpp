@@ -179,6 +179,9 @@ int main(int argc, char **argv)
                         //                    }
                         //                    ////////////////////////////
                     }
+                    engine.ub_ratio /= query_num;
+                    std::cout << "unbalance ratio: " << engine.ub_ratio << std::endl;
+                    engine.ub_ratio = 0;
                     auto e = std::chrono::high_resolution_clock::now();
                     std::chrono::duration<double> diff = e - s;
                     std::unordered_map<unsigned, double> recalls;

@@ -970,7 +970,7 @@ namespace PANNS
 
             auto *nb_data = reinterpret_cast<dataf *>(opt_nsg_graph_ + nb_id * vertex_bytes_);
             dataf norm = *nb_data++;
-            // ++tmp_count_computation;
+            ++tmp_count_computation;
             distf dist = compute_distance_with_norm(nb_data, query_data, norm);
 
             if (dist > dist_bound)
@@ -1068,7 +1068,9 @@ namespace PANNS
         const idi master_queue_start = local_queues_starts[num_threads_ - 1];
         idi &master_queue_size = local_queues_sizes[num_threads_ - 1];
         const dataf *query_data = queries_load_ + query_id * dimension_;
-
+        uint64_t local_dist_comps[num_threads_];
+        for (int i = 0; i < num_threads_; i++)
+            local_dist_comps[i] = 0;
         // Initialization Phase
         initialize_set_L_para(
             query_data,
@@ -1200,6 +1202,7 @@ namespace PANNS
 #ifdef BREAKDOWN_PRINT
                 time_expand_ -= WallTimer::get_time_mark();
 #endif
+
 #pragma omp parallel reduction(+ : tmp_count_computation) // , count_hops_
                 {
                     //                bool is_quota_done = false;
@@ -1231,7 +1234,7 @@ namespace PANNS
                                 local_queue_size,
                                 queue_capacity,
                                 is_visited,
-                                tmp_count_computation);
+                                local_dist_comps[w_i]); // tmp_count_computation
                             if (r <= k_uc)
                             {
                                 k_uc = r;
@@ -1263,7 +1266,7 @@ namespace PANNS
                     //                    ++count_workers_done;
                     //                }
                 } // Workers
-                count_distance_computation_ += tmp_count_computation;
+                // count_distance_computation_ += tmp_count_computation;
                 tmp_count_computation = 0;
 #ifdef BREAKDOWN_PRINT
                 time_expand_ += WallTimer::get_time_mark();
@@ -1289,7 +1292,17 @@ namespace PANNS
             } // Search Iterations
         } // Parallel Phase
 
-//    count_iterations_ += iter;
+        //    count_iterations_ += iter;
+        float mincomps = 1000000, maxcomps = 0;
+        for (int i = 0; i < num_threads_; i++)
+        {
+            if (local_dist_comps[i] < mincomps)
+                mincomps = local_dist_comps[i];
+            if (local_dist_comps[i] > maxcomps)
+                maxcomps = local_dist_comps[i];
+        }
+        count_distance_computation_ += maxcomps;
+        ub_ratio += maxcomps / mincomps;
 #ifdef BREAKDOWN_PRINT
         time_seq_ -= WallTimer::get_time_mark();
 #endif
