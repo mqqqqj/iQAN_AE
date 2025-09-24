@@ -16,6 +16,8 @@
 #include <unordered_set>
 #include <set>
 #include <cfloat>
+#include <atomic>
+#include <cstdint>
 #include <algorithm>
 // #include <omp.h>
 #include "../include/definitions.h"
@@ -27,6 +29,61 @@
 
 namespace PANNS
 {
+
+    class AtomicBitSet
+    {
+    private:
+        std::vector<std::atomic<uint64_t>> bit_words;
+
+    public:
+        AtomicBitSet(size_t num_bits) : bit_words((num_bits + 63) / 64)
+        {
+            for (size_t i = 0; i < bit_words.size(); ++i)
+            {
+                bit_words[i].store(0, std::memory_order_relaxed);
+            }
+        }
+
+        bool test_and_set(size_t bit_index)
+        {
+            size_t word_index = bit_index >> 6;
+            size_t bit_offset = bit_index & 63;
+            uint64_t mask = uint64_t(1) << bit_offset;
+
+            uint64_t old_val = bit_words[word_index].load(std::memory_order_acquire);
+            uint64_t new_val;
+            do
+            {
+                if (old_val & mask)
+                {
+                    return true; // 已经被设置
+                }
+                new_val = old_val | mask;
+            } while (!bit_words[word_index].compare_exchange_weak(
+                old_val, new_val,
+                std::memory_order_acq_rel,
+                std::memory_order_acquire));
+
+            return false; // 之前未被设置
+        }
+
+        // 重置所有位
+        void reset_all()
+        {
+            for (size_t i = 0; i < bit_words.size(); ++i)
+            {
+                bit_words[i].store(0, std::memory_order_relaxed);
+            }
+        }
+
+        bool test(size_t bit_index) const
+        {
+            size_t word_index = bit_index >> 6;
+            size_t bit_offset = bit_index & 63;
+            uint64_t mask = uint64_t(1) << bit_offset;
+            return (bit_words[word_index].load(std::memory_order_acquire) & mask) != 0;
+        }
+    };
 
     class Searching
     {
@@ -138,7 +195,8 @@ namespace PANNS
             const idi local_queue_start,
             idi &local_queue_size,
             const idi &local_queue_capacity,
-            boost::dynamic_bitset<> &is_visited,
+            AtomicBitSet &is_visited,
+            // boost::dynamic_bitset<> &is_visited,
             uint64_t &local_count_computation);
         //            bool &is_quota_done);
         idi pick_top_m_to_workers(
@@ -164,8 +222,7 @@ namespace PANNS
             std::vector<Candidate> &set_L,
             const idi set_L_start,
             idi &set_L_size,
-            const std::vector<idi> &init_ids,
-            boost::dynamic_bitset<> &is_visited);
+            const std::vector<idi> &init_ids, AtomicBitSet &is_visited); // boost::dynamic_bitset<> &is_visited
 
     public:
         // For Profiling
@@ -178,6 +235,7 @@ namespace PANNS
         uint64_t count_merge_ = 0;
         double time_expand_ = 0.0;
         double time_merge_ = 0.0;
+        double time_merge_visited_list = 0.0;
         double time_seq_ = 0.0;
         //    double time_pick_ = 0.0;
         //    uint64_t count_full_merge_ = 0;
@@ -274,7 +332,7 @@ namespace PANNS
             const idi local_queue_capacity, // Maximum size of local queue
             const std::vector<idi> &local_queues_starts,
             std::vector<idi> &local_queues_sizes, // Sizes of local queue
-            boost::dynamic_bitset<> &is_visited,
+            AtomicBitSet &is_visited,
             // std::vector<boost::dynamic_bitset<>> &is_visited,
             const idi subsearch_iterations);
         //            std::vector<idi> &top_m_candidates);

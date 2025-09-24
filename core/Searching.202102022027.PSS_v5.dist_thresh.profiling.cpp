@@ -938,7 +938,8 @@ namespace PANNS
         const idi local_queue_start,
         idi &local_queue_size,
         const idi &local_queue_capacity,
-        boost::dynamic_bitset<> &is_visited,
+        AtomicBitSet &is_visited,
+        // boost::dynamic_bitset<> &is_visited,
         uint64_t &local_count_computation)
     //        bool &is_quota_done)
     {
@@ -961,11 +962,16 @@ namespace PANNS
         {
             idi nb_id = out_edges[e_i];
             { // Sequential edition
-                if (is_visited[nb_id])
+                // if (is_visited[nb_id])
+                // {
+                //     continue;
+                // }
+                // is_visited[nb_id] = true;
+                if (is_visited.test(nb_id))
                 {
                     continue;
                 }
-                is_visited[nb_id] = true;
+                is_visited.test_and_set(nb_id);
             }
 
             auto *nb_data = reinterpret_cast<dataf *>(opt_nsg_graph_ + nb_id * vertex_bytes_);
@@ -1012,12 +1018,14 @@ namespace PANNS
         const idi set_L_start,
         idi &set_L_size,
         const std::vector<idi> &init_ids,
-        boost::dynamic_bitset<> &is_visited)
+        AtomicBitSet &is_visited // boost::dynamic_bitset<> &is_visited
+    )
     {
         // #pragma omp parallel for
         for (idi c_i = 0; c_i < L; ++c_i)
         {
-            is_visited[init_ids[c_i]] = true;
+            // is_visited[init_ids[c_i]] = true;
+            is_visited.test_and_set(init_ids[c_i]);
         }
 
         // #pragma omp parallel for
@@ -1059,7 +1067,7 @@ namespace PANNS
         const idi local_queue_capacity, // Maximum size of local queue
         const std::vector<idi> &local_queues_starts,
         std::vector<idi> &local_queues_sizes, // Sizes of local queue
-        boost::dynamic_bitset<> &is_visited,
+        AtomicBitSet &is_visited,
         // std::vector<boost::dynamic_bitset<>> &is_visited,
         const idi subsearch_iterations)
     {
@@ -1166,8 +1174,6 @@ namespace PANNS
 #ifdef BREAKDOWN_PRINT
             time_seq_ += WallTimer::get_time_mark();
 #endif
-            // bool find_enough_knn = false;
-            //
             // Parallel Phase
             while (!no_need_to_continue) // no_need_to_continue
             {
@@ -1205,7 +1211,7 @@ namespace PANNS
                 time_expand_ -= WallTimer::get_time_mark();
 #endif
 
-#pragma omp parallel reduction(+ : tmp_count_computation) // , count_hops_
+#pragma omp parallel reduction(+ : tmp_count_computation, count_hops_)
                 {
                     //                bool is_quota_done = false;
                     int w_i = omp_get_thread_num();
@@ -1223,7 +1229,7 @@ namespace PANNS
                         {
                             cand.is_checked_ = true;
                             ++worker_iter;
-                            // ++count_hops_;
+                            ++count_hops_;
                             cand_id = cand.id_;
                             r = expand_one_candidate(
                                 w_i,
@@ -1275,31 +1281,35 @@ namespace PANNS
                 time_expand_ += WallTimer::get_time_mark();
                 time_merge_ -= WallTimer::get_time_mark();
 #endif
-                // Merge
+                ++count_merge_;
+                idi r = merge_all_queues_to_master(
+                    set_L,
+                    local_queues_starts,
+                    local_queues_sizes,
+                    local_queue_capacity,
+                    L);
+                if (r <= k_master)
                 {
-                    ++count_merge_;
-                    idi r = merge_all_queues_to_master(
-                        set_L,
-                        local_queues_starts,
-                        local_queues_sizes,
-                        local_queue_capacity,
-                        L);
-                    if (r <= k_master)
-                    {
-                        k_master = r;
-                    }
-                    // for (int i = 1; i < num_threads_; i++)
-                    // {
-                    //     is_visited[0] |= is_visited[i];
-                    // }
-                    // for (int i = 1; i < num_threads_; i++)
-                    // {
-                    //     is_visited[i] = is_visited[0];
-                    // }
+                    k_master = r;
                 }
 #ifdef BREAKDOWN_PRINT
                 time_merge_ += WallTimer::get_time_mark();
 #endif
+#ifdef BREAKDOWN_PRINT
+                time_merge_visited_list -= WallTimer::get_time_mark();
+#endif
+                // for (int i = 1; i < num_threads_; i++)
+                // {
+                //     is_visited[0] |= is_visited[i];
+                // }
+                // for (int i = 1; i < num_threads_; i++)
+                // {
+                //     is_visited[i] = is_visited[0];
+                // }
+#ifdef BREAKDOWN_PRINT
+                time_merge_visited_list += WallTimer::get_time_mark();
+#endif
+
             } // Search Iterations
         } // Parallel Phase
 
@@ -1331,7 +1341,7 @@ namespace PANNS
             // {
             //     is_visited[i].reset();
             // }
-            is_visited.reset();
+            is_visited.reset_all();
             //        is_visited.clear_all();
             //        std::fill(local_queues_sizes.begin(), local_queues_sizes.end(), 0);
             //        std::fill(threads_computations_.begin(), threads_computations_.end(), 0);
