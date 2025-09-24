@@ -1060,6 +1060,7 @@ namespace PANNS
         const std::vector<idi> &local_queues_starts,
         std::vector<idi> &local_queues_sizes, // Sizes of local queue
         boost::dynamic_bitset<> &is_visited,
+        // std::vector<boost::dynamic_bitset<>> &is_visited,
         const idi subsearch_iterations)
     {
 #ifdef BREAKDOWN_PRINT
@@ -1084,7 +1085,6 @@ namespace PANNS
 
         const distf &last_dist = set_L[master_queue_start + master_queue_size - 1].distance_;
         idi iter = 0; // for debug
-
 #ifdef BREAKDOWN_PRINT
         time_seq_ += WallTimer::get_time_mark();
 #endif
@@ -1134,8 +1134,9 @@ namespace PANNS
                             tmp_count_computation);
                         //                        is_quota_done);
                         count_distance_computation_ += tmp_count_computation;
+                        max_distance_computation_ += tmp_count_computation;
                         tmp_count_computation = 0;
-                        // ++count_hops_;
+                        ++count_hops_;
                     }
                     else
                     {
@@ -1165,12 +1166,13 @@ namespace PANNS
 #ifdef BREAKDOWN_PRINT
             time_seq_ += WallTimer::get_time_mark();
 #endif
-
+            // bool find_enough_knn = false;
+            //
             // Parallel Phase
-            while (!no_need_to_continue)
+            while (!no_need_to_continue) // no_need_to_continue
             {
 #ifdef BREAKDOWN_PRINT
-                time_seq_ -= WallTimer::get_time_mark();
+                time_merge_ -= WallTimer::get_time_mark();
 #endif
                 ++iter;
                 ++para_iter;
@@ -1187,14 +1189,14 @@ namespace PANNS
                         k_master))
                 {
 #ifdef BREAKDOWN_PRINT
-                    time_seq_ += WallTimer::get_time_mark();
+                    time_merge_ += WallTimer::get_time_mark();
 #endif
                     break;
                 }
 //            distf dist_thresh = last_dist;
 //            distf dist_thresh = set_L[master_queue_start + master_queue_size - 1].distance_;
 #ifdef BREAKDOWN_PRINT
-                time_seq_ += WallTimer::get_time_mark();
+                time_merge_ += WallTimer::get_time_mark();
 #endif
 
 //            count_workers_done = 0;
@@ -1257,6 +1259,7 @@ namespace PANNS
                         {
                             ++k_uc;
                         }
+
                     } // Expand Top-1
                     if (num_threads_ - 1 == w_i)
                     {
@@ -1267,7 +1270,7 @@ namespace PANNS
                     //                }
                 } // Workers
                 // count_distance_computation_ += tmp_count_computation;
-                tmp_count_computation = 0;
+                // tmp_count_computation = 0;
 #ifdef BREAKDOWN_PRINT
                 time_expand_ += WallTimer::get_time_mark();
                 time_merge_ -= WallTimer::get_time_mark();
@@ -1285,6 +1288,14 @@ namespace PANNS
                     {
                         k_master = r;
                     }
+                    // for (int i = 1; i < num_threads_; i++)
+                    // {
+                    //     is_visited[0] |= is_visited[i];
+                    // }
+                    // for (int i = 1; i < num_threads_; i++)
+                    // {
+                    //     is_visited[i] = is_visited[0];
+                    // }
                 }
 #ifdef BREAKDOWN_PRINT
                 time_merge_ += WallTimer::get_time_mark();
@@ -1296,12 +1307,14 @@ namespace PANNS
         float mincomps = 1000000, maxcomps = 0;
         for (int i = 0; i < num_threads_; i++)
         {
+            count_distance_computation_ += local_dist_comps[i];
             if (local_dist_comps[i] < mincomps)
                 mincomps = local_dist_comps[i];
             if (local_dist_comps[i] > maxcomps)
                 maxcomps = local_dist_comps[i];
         }
-        count_distance_computation_ += maxcomps;
+        max_distance_computation_ += maxcomps;
+        // std::cout << maxcomps << std::endl;
         ub_ratio += maxcomps / mincomps;
 #ifdef BREAKDOWN_PRINT
         time_seq_ -= WallTimer::get_time_mark();
@@ -1314,6 +1327,10 @@ namespace PANNS
 
         { // Reset
             //        std::fill(is_visited.begin(), is_visited.end(), 0);
+            // for (int i = 0; i < num_threads_; i++)
+            // {
+            //     is_visited[i].reset();
+            // }
             is_visited.reset();
             //        is_visited.clear_all();
             //        std::fill(local_queues_sizes.begin(), local_queues_sizes.end(), 0);

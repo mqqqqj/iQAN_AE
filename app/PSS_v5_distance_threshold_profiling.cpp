@@ -108,7 +108,7 @@ int main(int argc, char **argv)
     {
         L_list.push_back(std::stoi(L_val));
     }
-    printf("L,Throughput,latency,recall,dist_comps,hops,avg_merge,t_expand(s.),t_merge(s.),t_seq(s.),t_p_expand(%%),t_p_merge(%%),t_p_seq(%%)\n");
+    printf("L,Throughput,latency,recall,total_dist_comps,max_dist_comps,hops,avg_merge,t_expand(s.),t_merge(s.),t_seq(s.),t_p_expand(%%),t_p_merge(%%),t_p_seq(%%)\n");
     for (int L : L_list)
     {
         const unsigned L_master_low = L;
@@ -147,6 +147,8 @@ int main(int argc, char **argv)
                     std::vector<PANNS::idi> init_ids(L_master);
                     //                std::vector<uint8_t> is_visited(points_num, 0);
                     boost::dynamic_bitset<> is_visited(points_num);
+                    // std::vector<boost::dynamic_bitset<>> is_visited(num_threads, boost::dynamic_bitset<>(points_num, 0));
+
                     std::vector<PANNS::Candidate> set_L((num_threads - 1) * L_local + L_master);
                     std::vector<PANNS::idi> local_queues_sizes(num_threads, 0);
                     std::vector<PANNS::idi> local_queues_starts(num_threads);
@@ -194,11 +196,12 @@ int main(int argc, char **argv)
                     }
                     { // Basic output
 
-                        printf("%u,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f\n",
+                        printf("%u,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f\n",
                                L_master, query_num / diff.count(),
                                diff.count() * 1000 / query_num,
                                recalls[K],
                                (float)engine.count_distance_computation_ / query_num,
+                               (float)engine.max_distance_computation_ / query_num,
                                (float)engine.count_hops_ / (query_num * num_threads),
                                engine.count_merge_ * 1.0 / query_num,
                                engine.time_expand_,
@@ -209,6 +212,7 @@ int main(int argc, char **argv)
                                engine.time_seq_ / diff.count() * 100.0);
                     }
                     engine.count_distance_computation_ = 0;
+                    engine.max_distance_computation_ = 0;
                     engine.count_hops_ = 0;
                     engine.count_merge_ = 0;
                     engine.time_expand_ = 0.0;

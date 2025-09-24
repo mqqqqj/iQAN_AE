@@ -171,6 +171,7 @@ namespace PANNS
         // For Profiling
         //    L3CacheMissRate cache_miss_kernel;
         uint64_t count_distance_computation_ = 0;
+        uint64_t max_distance_computation_ = 0;
         //    uint64_t count_iterations_ = 0;
         uint64_t count_hops_ = 0;
         //    uint64_t count_checked_ = 0;
@@ -274,6 +275,7 @@ namespace PANNS
             const std::vector<idi> &local_queues_starts,
             std::vector<idi> &local_queues_sizes, // Sizes of local queue
             boost::dynamic_bitset<> &is_visited,
+            // std::vector<boost::dynamic_bitset<>> &is_visited,
             const idi subsearch_iterations);
         //            std::vector<idi> &top_m_candidates);
 
