@@ -145,10 +145,7 @@ int main(int argc, char **argv)
                         set_K_list[i].resize(K);
 
                     std::vector<PANNS::idi> init_ids(L_master);
-                    //                std::vector<uint8_t> is_visited(points_num, 0);
                     boost::dynamic_bitset<> is_visited(points_num);
-                    // std::vector<boost::dynamic_bitset<>> is_visited(num_threads, boost::dynamic_bitset<>(points_num, 0));
-
                     std::vector<PANNS::Candidate> set_L((num_threads - 1) * L_local + L_master);
                     std::vector<PANNS::idi> local_queues_sizes(num_threads, 0);
                     std::vector<PANNS::idi> local_queues_starts(num_threads);
@@ -174,12 +171,6 @@ int main(int argc, char **argv)
                             local_queues_sizes,
                             is_visited,
                             subsearch_iterations);
-                        //                    ////////////////////////////
-                        //                    //// CAREFUL!!!!
-                        //                    if (q_i == 0) {
-                        //                        break;
-                        //                    }
-                        //                    ////////////////////////////
                     }
                     engine.ub_ratio /= query_num;
                     std::cout << "unbalance ratio: " << engine.ub_ratio << std::endl;

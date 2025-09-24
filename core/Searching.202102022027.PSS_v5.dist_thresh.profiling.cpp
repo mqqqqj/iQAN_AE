@@ -1060,7 +1060,6 @@ namespace PANNS
         const std::vector<idi> &local_queues_starts,
         std::vector<idi> &local_queues_sizes, // Sizes of local queue
         boost::dynamic_bitset<> &is_visited,
-        // std::vector<boost::dynamic_bitset<>> &is_visited,
         const idi subsearch_iterations)
     {
 #ifdef BREAKDOWN_PRINT
@@ -1166,8 +1165,6 @@ namespace PANNS
 #ifdef BREAKDOWN_PRINT
             time_seq_ += WallTimer::get_time_mark();
 #endif
-            // bool find_enough_knn = false;
-            //
             // Parallel Phase
             while (!no_need_to_continue) // no_need_to_continue
             {
@@ -1223,7 +1220,7 @@ namespace PANNS
                         {
                             cand.is_checked_ = true;
                             ++worker_iter;
-                            // ++count_hops_;
+                            ++count_hops_;
                             cand_id = cand.id_;
                             r = expand_one_candidate(
                                 w_i,
@@ -1288,14 +1285,6 @@ namespace PANNS
                     {
                         k_master = r;
                     }
-                    // for (int i = 1; i < num_threads_; i++)
-                    // {
-                    //     is_visited[0] |= is_visited[i];
-                    // }
-                    // for (int i = 1; i < num_threads_; i++)
-                    // {
-                    //     is_visited[i] = is_visited[0];
-                    // }
                 }
 #ifdef BREAKDOWN_PRINT
                 time_merge_ += WallTimer::get_time_mark();
@@ -1314,7 +1303,6 @@ namespace PANNS
                 maxcomps = local_dist_comps[i];
         }
         max_distance_computation_ += maxcomps;
-        // std::cout << maxcomps << std::endl;
         ub_ratio += maxcomps / mincomps;
 #ifdef BREAKDOWN_PRINT
         time_seq_ -= WallTimer::get_time_mark();
@@ -1326,11 +1314,6 @@ namespace PANNS
         }
 
         { // Reset
-            //        std::fill(is_visited.begin(), is_visited.end(), 0);
-            // for (int i = 0; i < num_threads_; i++)
-            // {
-            //     is_visited[i].reset();
-            // }
             is_visited.reset();
             //        is_visited.clear_all();
             //        std::fill(local_queues_sizes.begin(), local_queues_sizes.end(), 0);
