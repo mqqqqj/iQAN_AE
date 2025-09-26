@@ -85,10 +85,10 @@ int main(int argc, char **argv)
     unsigned data_dimension = engine.dimension_;
     unsigned points_num = engine.num_v_;
 
-    if (engine.num_queries_ > 10000)
+    if (engine.num_queries_ > 1000)
     {
-        std::cout << "only use first 10k query" << std::endl;
-        engine.num_queries_ = 10000;
+        std::cout << "only use first 1k query" << std::endl;
+        engine.num_queries_ = 1000;
     }
     unsigned query_num = engine.num_queries_;
     if (true_nn_list.size() > query_num)
@@ -173,7 +173,7 @@ int main(int argc, char **argv)
                             subsearch_iterations);
                     }
                     engine.ub_ratio /= query_num;
-                    std::cout << "unbalance ratio: " << engine.ub_ratio << std::endl;
+                    // std::cout << "unbalance ratio: " << engine.ub_ratio << std::endl;
                     engine.ub_ratio = 0;
                     auto e = std::chrono::high_resolution_clock::now();
                     std::chrono::duration<double> diff = e - s;

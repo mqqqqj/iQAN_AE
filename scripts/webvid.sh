@@ -9,10 +9,10 @@ thread_num=8
 L_str=$(IFS=,; echo "${L_list[*]}")
 
 taskset -c 0-$((thread_num - 1)) PSS_v5_distance_threshold_profiling \
-/SSD/LAION/LAION_base_imgemb_10M.fbin \
-/SSD/LAION/LAION_test_query_textemb_50k.fbin \
-/SSD/models/nsg/laion.L2000.R64.C2000.nsg \
-100 output.ivecs /SSD/LAION/gt.test50K.bin $thread_num "$L_str" | tee -a /home/mqj/proj/ANNSLib/plot/laion_iqan_8t_0_8Lsync.csv
+/SSD/WebVid/webvid.base.2.5M.fbin \
+/SSD/WebVid/webvid.query.10k.fbin \
+/SSD/models/nsg/webvid.L2000.R64.C2000.nsg \
+100 output.ivecs /SSD/WebVid/gt.query.top100.bin $thread_num "$L_str" | tee -a /home/mqj/proj/ANNSLib/plot/webvid_iqan_8t.csv
 
 # | tee -a /home/mqj/proj/ANNSLib/results/laion_iqan_8t.csv
 
