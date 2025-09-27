@@ -41,6 +41,8 @@ namespace PANNS
         idi ep_ = 0;    // Start point
         std::vector<std::vector<PANNS::idi>> groundtruth;
         float ub_ratio = 0;
+        std::vector<int> try_cnt;
+        std::vector<int> try_success_cnt;
         //    std::vector<dataf> data_load_;
         //    std::vector<dataf> queries_load_;
         //    std::vector< std::vector<dataf> > data_load_;

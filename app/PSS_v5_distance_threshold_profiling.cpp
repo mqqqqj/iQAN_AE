@@ -56,6 +56,7 @@ int main(int argc, char **argv)
     limit.rlim_max = 0;
     setrlimit(RLIMIT_CORE, &limit);
     PANNS::Searching engine;
+
     engine.load_data_load(argv[1]);
     engine.load_queries_load(argv[2]);
     engine.load_nsg_graph(argv[3]);
@@ -98,6 +99,8 @@ int main(int argc, char **argv)
     int num_threads = strtoull(argv[7], nullptr, 0);
     engine.num_threads_ = num_threads;
     omp_set_num_threads(num_threads);
+    engine.try_cnt.assign(engine.num_v_, 0);
+    engine.try_success_cnt.assign(engine.num_v_, 0);
     //    omp_set_nested(1);
     //    omp_set_max_active_levels(2);
     std::vector<int> L_list;
