@@ -962,15 +962,12 @@ namespace PANNS
         {
             idi nb_id = out_edges[e_i];
             { // Sequential edition
-                // if (is_visited[nb_id])
-                // {
-                //     continue;
-                // }
-                // is_visited[nb_id] = true;
+                try_cnt[nb_id] += 1;
                 if (is_visited.test(nb_id))
                 {
                     continue;
                 }
+                try_success_cnt[nb_id] += 1;
                 is_visited.test_and_set(nb_id);
             }
 
@@ -1334,7 +1331,20 @@ namespace PANNS
         {
             set_K[k_i] = set_L[k_i + master_queue_start].id_;
         }
-
+        float sucess_ratio = 0;
+        int visit_node_num = 0;
+        for (int i = 0; i < num_v_; i++)
+        {
+            if (try_cnt[i] != 0)
+            {
+                visit_node_num += 1;
+                sucess_ratio += (float)try_success_cnt[i] / try_cnt[i];
+            }
+        }
+        sucess_ratio /= visit_node_num;
+        std::cout << visit_node_num << "," << sucess_ratio << std::endl;
+        std::fill(try_cnt.begin(), try_cnt.end(), 0);
+        std::fill(try_success_cnt.begin(), try_success_cnt.end(), 0);
         { // Reset
             //        std::fill(is_visited.begin(), is_visited.end(), 0);
             // for (int i = 0; i < num_threads_; i++)
