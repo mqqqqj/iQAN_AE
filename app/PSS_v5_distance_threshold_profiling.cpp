@@ -99,8 +99,6 @@ int main(int argc, char **argv)
     int num_threads = strtoull(argv[7], nullptr, 0);
     engine.num_threads_ = num_threads;
     omp_set_num_threads(num_threads);
-    engine.try_cnt.assign(engine.num_v_, 0);
-    engine.try_success_cnt.assign(engine.num_v_, 0);
     //    omp_set_nested(1);
     //    omp_set_max_active_levels(2);
     std::vector<int> L_list;
