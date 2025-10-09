@@ -86,10 +86,10 @@ int main(int argc, char **argv)
     unsigned data_dimension = engine.dimension_;
     unsigned points_num = engine.num_v_;
 
-    if (engine.num_queries_ > 1000)
+    if (engine.num_queries_ > 10000)
     {
-        std::cout << "only use first 1k query" << std::endl;
-        engine.num_queries_ = 1000;
+        std::cout << "only use first 10k query" << std::endl;
+        engine.num_queries_ = 10000;
     }
     unsigned query_num = engine.num_queries_;
     if (true_nn_list.size() > query_num)
@@ -109,7 +109,7 @@ int main(int argc, char **argv)
     {
         L_list.push_back(std::stoi(L_val));
     }
-    printf("L,Throughput,latency,recall,total_dist_comps,max_dist_comps,hops,avg_merge,t_expand(s.),t_merge(s.),t_seq(s.),t_p_expand(%%),t_p_merge(%%),t_p_seq(%%)\n");
+    printf("L,Throughput,latency,recall,p95recall,p99recall,p95latency,p99latency,total_dist_comps,max_dist_comps,hops,avg_merge,t_expand(s.),t_merge(s.),t_seq(s.),t_p_expand(%%),t_p_merge(%%),t_p_seq(%%)\n");
     for (int L : L_list)
     {
         const unsigned L_master_low = L;
@@ -155,11 +155,13 @@ int main(int argc, char **argv)
                         local_queues_starts[q_i] = q_i * L_local;
                     }
                     //                std::vector<PANNS::idi> top_m_candidates(num_threads);
+                    std::vector<float> latency_list(query_num); // 单位：毫秒
                     auto s = std::chrono::high_resolution_clock::now();
                     //                engine.prepare_init_ids(init_ids, L_local);
                     engine.prepare_init_ids(init_ids, L_master);
                     for (unsigned q_i = 0; q_i < query_num; ++q_i)
                     {
+                        auto start_time = std::chrono::high_resolution_clock::now();
                         engine.para_search_PSS_v5_dist_thresh_profiling(
                             q_i,
                             K,
@@ -172,26 +174,51 @@ int main(int argc, char **argv)
                             local_queues_sizes,
                             is_visited,
                             subsearch_iterations);
+                        auto end_time = std::chrono::high_resolution_clock::now();
+                        auto duration = std::chrono::duration_cast<std::chrono::microseconds>(end_time - start_time);
+                        latency_list[q_i] = duration.count() / 1000.0f; // 转换为毫秒
                     }
                     engine.ub_ratio /= query_num;
                     // std::cout << "unbalance ratio: " << engine.ub_ratio << std::endl;
                     engine.ub_ratio = 0;
                     auto e = std::chrono::high_resolution_clock::now();
                     std::chrono::duration<double> diff = e - s;
-                    std::unordered_map<unsigned, double> recalls;
-                    { // Recall values
-                        engine.get_recall_for_all_queries(
-                            true_nn_list,
-                            set_K_list,
-                            recalls,
-                            L_master);
+                    float accumulate_latency = std::accumulate(latency_list.begin(), latency_list.end(), 0.0f);
+                    float avg_latency = accumulate_latency / latency_list.size();
+                    std::sort(latency_list.begin(), latency_list.end());
+                    float p95latency = latency_list[latency_list.size() * 0.95];
+                    float p99latency = latency_list[latency_list.size() * 0.99];
+                    std::vector<float> recalls(query_num);
+                    for (unsigned i = 0; i < query_num; i++)
+                    {
+                        int correct = 0;
+                        for (unsigned j = 0; j < K; j++)
+                        {
+                            for (unsigned g = 0; g < K; g++)
+                            {
+                                if (set_K_list[i][j] == true_nn_list[i][g])
+                                {
+                                    correct++;
+                                    break;
+                                }
+                            }
+                        }
+                        recalls[i] = (float)correct / K;
                     }
+                    float accumulate_recall = std::accumulate(recalls.begin(), recalls.end(), 0.0f);
+                    float avg_recall = accumulate_recall / recalls.size();
+                    std::sort(recalls.begin(), recalls.end());
+                    float p95recall = recalls[recalls.size() * 0.05];
+                    float p99recall = recalls[recalls.size() * 0.01];
                     { // Basic output
-
-                        printf("%u,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f\n",
+                        printf("%u,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f\n",
                                L_master, query_num / diff.count(),
-                               diff.count() * 1000 / query_num,
-                               recalls[K],
+                               avg_latency,
+                               avg_recall,
+                               p95recall,
+                               p99recall,
+                               p95latency,
+                               p99latency,
                                (float)engine.count_distance_computation_ / query_num,
                                (float)engine.max_distance_computation_ / query_num,
                                (float)engine.count_hops_ / (query_num * num_threads),

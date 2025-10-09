@@ -48,6 +48,17 @@ target_link_libraries(NSG PRIVATE ${Boost_LIBRARIES} OpenMP::OpenMP_CXX)
 
 # Bin
 add_executable(
+        online_search
+        app/online_search.cpp
+        core/Searching.202102022027.PSS_v5.dist_thresh.profiling.cpp)
+target_compile_options(
+        online_search
+        PRIVATE ${CXX_OPTION})
+target_link_libraries(
+        online_search
+        PRIVATE ${Boost_LIBRARIES} OpenMP::OpenMP_CXX)
+
+add_executable(
         PSS_v5_find_L_index_adaptive_merge_L_master_LG
         app/PSS_v5_find_L_index_adaptive_merge_L_master_LG.cpp
         core/Searching.202111152031.PSS_v5.index_adaptive_merge_L_master.LG.cpp
