@@ -212,7 +212,7 @@ int main(int argc, char **argv)
                     float p99recall = recalls[recalls.size() * 0.01];
                     { // Basic output
                         printf("%u,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f\n",
-                               L_master, query_num / diff.count(),
+                               L, query_num / diff.count(),
                                avg_latency,
                                avg_recall,
                                p95recall,
