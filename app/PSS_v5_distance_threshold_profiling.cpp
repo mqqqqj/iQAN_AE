@@ -112,8 +112,8 @@ int main(int argc, char **argv)
     printf("L,Throughput,latency,recall,p95recall,p99recall,p95latency,p99latency,total_dist_comps,max_dist_comps,hops,avg_merge,t_expand(s.),t_merge(s.),t_seq(s.),t_p_expand(%%),t_p_merge(%%),t_p_seq(%%)\n");
     for (int L : L_list)
     {
-        const unsigned L_master_low = L;
-        const unsigned L_master_up = L;
+        const unsigned L_master_low = K;
+        const unsigned L_master_up = K;
         const unsigned L_master_step = 8;
         const unsigned L_local_low = 0;
         const unsigned L_local_up = 0;
