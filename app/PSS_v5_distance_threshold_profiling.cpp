@@ -86,10 +86,10 @@ int main(int argc, char **argv)
     unsigned data_dimension = engine.dimension_;
     unsigned points_num = engine.num_v_;
 
-    if (engine.num_queries_ > 1000)
+    if (engine.num_queries_ > 10000)
     {
-        std::cout << "only use first 1k query" << std::endl;
-        engine.num_queries_ = 1000;
+        std::cout << "only use first 10k query" << std::endl;
+        engine.num_queries_ = 10000;
     }
     unsigned query_num = engine.num_queries_;
     if (true_nn_list.size() > query_num)
