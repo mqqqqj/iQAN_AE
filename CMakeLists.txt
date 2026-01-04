@@ -8,7 +8,7 @@ project(PANNS LANGUAGES CXX)
 set(CMAKE_VERBOSE_MAKEFILE ON)
 
 # C++14
-set(CMAKE_CXX_STANDARD 14)
+set(CMAKE_CXX_STANDARD 17)
 
 # Boost
 # find_package(Boost REQUIRED)
@@ -24,10 +24,12 @@ else()
 endif()
 # Debug Options
 if (${CMAKE_BUILD_TYPE} MATCHES "Debug")
-    set(CXX_OPTION ${CXX_OPTION} -O0)
+message(STATUS "Debug")
+set(CXX_OPTION ${CXX_OPTION} -O0)
 endif()
-if (NOT ${CMAKE_BUILD_TYPE} MATCHES "Release")
+if (${CMAKE_BUILD_TYPE} MATCHES "Release")
 #     set(CXX_OPTION ${CXX_OPTION} -Wall -Wextra -pedantic -Werror)
+message(STATUS "Release")
 set(CXX_OPTION ${CXX_OPTION} -Ofast -lboost -march=native -mavx -mavx2 -msse4.2 -fpic -w)
 endif()
 

@@ -86,10 +86,10 @@ int main(int argc, char **argv)
     unsigned data_dimension = engine.dimension_;
     unsigned points_num = engine.num_v_;
 
-    if (engine.num_queries_ > 10000)
+    if (engine.num_queries_ > 1000)
     {
-        std::cout << "only use first 10k query" << std::endl;
-        engine.num_queries_ = 10000;
+        std::cout << "only use first 1k query" << std::endl;
+        engine.num_queries_ = 1000;
     }
     unsigned query_num = engine.num_queries_;
     if (true_nn_list.size() > query_num)
@@ -118,8 +118,8 @@ int main(int argc, char **argv)
         const unsigned L_local_low = 0;
         const unsigned L_local_up = 0;
         const unsigned L_local_step = 0;
-        const unsigned X_low = L;
-        const unsigned X_up = L;
+        const unsigned X_low = 1;
+        const unsigned X_up = 1;
         const unsigned X_step = 8;
         const unsigned I_thresh_low = 0;
         const unsigned I_thresh_up = 0;
