@@ -76,15 +76,9 @@ namespace PANNS
         //            const std::vector<PANNS::dataf> &data);
         //        size_t loc_start,
         //        idi dimension)
-        dataf compute_distance_with_norm(
+        distf compute_distance_with_norm(
             const dataf *v_data,
             const dataf *q_data,
-            //            idi vertex_id,
-            //            idi query_id,
-            //            const std::vector<dataf> &d_data,
-            //            const std::vector<dataf> &q_data,
-            //        PANNS::idi d_start,
-            //        PANNS::idi q_start,
             const dataf vertex_norm) const;
         static idi add_into_queue(
             std::vector<PANNS::Candidate> &queue,

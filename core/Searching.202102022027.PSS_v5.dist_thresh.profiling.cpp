@@ -36,11 +36,18 @@ namespace PANNS
     void Searching::load_data_load(char *filename)
     {
         auto old_d = dimension_;
-        DiskIO::load_fbin(
-            filename,
-            data_load_,
-            num_v_,
-            dimension_);
+        // DiskIO::load_fbin(
+        //     filename,
+        //     data_load_,
+        //     num_v_,
+        //     dimension_);
+        uint8_t *data_u8 = nullptr;
+        DiskIO::load_u8bin(filename, data_u8, num_v_, dimension_);
+        size_t total_size = dimension_ * (size_t)num_v_;
+        data_load_ = new float[total_size];
+        for (size_t i = 0; i < total_size; i++)
+            data_load_[i] = (float)data_u8[i];
+        delete[] data_u8;
         if (old_d)
         {
             if (old_d != dimension_)
@@ -59,11 +66,17 @@ namespace PANNS
     void Searching::load_queries_load(char *filename)
     {
         auto old_d = dimension_;
-        DiskIO::load_fbin(
+        uint8_t *queries_u8 = nullptr;
+        DiskIO::load_u8bin(
             filename,
-            queries_load_,
+            queries_u8,
             num_queries_,
             dimension_);
+        size_t total_size = dimension_ * (size_t)num_queries_;
+        queries_load_ = new float[total_size];
+        for (size_t i = 0; i < total_size; i++)
+            queries_load_[i] = (float)queries_u8[i];
+        delete[] queries_u8;
         if (old_d)
         {
             if (old_d != dimension_)
@@ -117,9 +130,9 @@ namespace PANNS
             //        fin.read(reinterpret_cast<char *>(tmp_ngbrs.data()), degree * sizeof(unsigned));
 
             // Norm and data
-            distf norm = compute_norm(data_load_ + v_id * dimension_);
+            dataf norm = compute_norm(data_load_ + v_id * dimension_);
             //        distf norm = compute_norm(v_id);
-            std::memcpy(base_location, &norm, sizeof(distf));                                                  // Norm
+            std::memcpy(base_location, &norm, sizeof(dataf));                                                  // Norm
             memcpy(base_location + sizeof(distf), data_load_ + v_id * dimension_, dimension_ * sizeof(dataf)); // Data
             base_location += data_bytes_;
 
@@ -345,108 +358,21 @@ namespace PANNS
     // TODO: re-code in AVX-512
     dataf Searching::compute_norm(
         const dataf *data) const
-    //        idi vertex_id)
-    //        const std::vector<PANNS::dataf> &data)
-    //        size_t loc_start,
-    //        idi dimension)
     {
-        //    const dataf *a = data.data() + loc_start;
-        //    const dataf *a = data_load_ + vertex_id * dimension_;
-        //    idi size = dimension_;
-        dataf result = 0;
-//#define AVX_L2NORM(addr, dest, tmp) \
-//    tmp = _mm256_load_ps(addr); \
-//    tmp = _mm256_mul_ps(tmp, tmp); \
-//    dest = _mm256_add_ps(dest, tmp);
-#define AVX_L2NORM(addr, dest, tmp) \
-    tmp = _mm256_loadu_ps(addr);    \
-    tmp = _mm256_mul_ps(tmp, tmp);  \
-    dest = _mm256_add_ps(dest, tmp);
-
-        __m256 sum;
-        __m256 l0, l1;
-        unsigned D = (dimension_ + 7) & ~7U;
-        unsigned DR = D % 16;
-        unsigned DD = D - DR;
-        const float *l = data;
-        const float *e_l = l + DD;
-        float unpack[8] __attribute__((aligned(32))) = {0, 0, 0, 0, 0, 0, 0, 0};
-
-        sum = _mm256_load_ps(unpack);
-        //    sum = _mm256_loadu_ps(unpack);
-        if (DR)
-        {
-            AVX_L2NORM(e_l, sum, l0);
-        }
-        for (unsigned i = 0; i < DD; i += 16, l += 16)
-        {
-            AVX_L2NORM(l, sum, l0);
-            AVX_L2NORM(l + 8, sum, l1);
-        }
-        _mm256_store_ps(unpack, sum);
-        //    _mm256_storeu_ps(unpack, sum);
-        result = unpack[0] + unpack[1] + unpack[2] + unpack[3] + unpack[4] + unpack[5] + unpack[6] + unpack[7];
-
-        return result;
+        return 0;
     }
     // inner product
-    dataf Searching::compute_distance_with_norm(
-        const dataf *v_data,
-        const dataf *q_data,
-        const dataf vertex_norm) const
-    {
-        float result = 0;
-#define AVX_DOT(addr1, addr2, dest, tmp1, tmp2) \
-    tmp1 = _mm256_loadu_ps(addr1);              \
-    tmp2 = _mm256_loadu_ps(addr2);              \
-    tmp1 = _mm256_mul_ps(tmp1, tmp2);           \
-    dest = _mm256_add_ps(dest, tmp1);
-        __m256 sum;
-        __m256 l0, l1;
-        __m256 r0, r1;
-        unsigned D = (dimension_ + 7) & ~7U;
-        unsigned DR = D % 16;
-        unsigned DD = D - DR;
-        const float *l = v_data;
-        const float *r = q_data;
-        //    const float *l = (float *) (opt_nsg_graph_ + vertex_id * vertex_bytes_ + sizeof(distf));
-        //    const float *r = queries_load_ + query_id * dimension_;
-        const float *e_l = l + DD;
-        const float *e_r = r + DD;
-        float unpack[8] __attribute__((aligned(32))) = {0, 0, 0, 0, 0, 0, 0, 0};
-        sum = _mm256_load_ps(unpack);
-        //    sum = _mm256_loadu_ps(unpack);
-        if (DR)
-        {
-            AVX_DOT(e_l, e_r, sum, l0, r0);
-        }
-
-        for (unsigned i = 0; i < DD; i += 16, l += 16, r += 16)
-        {
-            AVX_DOT(l, r, sum, l0, r0);
-            AVX_DOT(l + 8, r + 8, sum, l1, r1);
-        }
-        _mm256_store_ps(unpack, sum);
-        //    _mm256_storeu_ps(unpack, sum);
-        result = unpack[0] + unpack[1] + unpack[2] + unpack[3] + unpack[4] + unpack[5] + unpack[6] + unpack[7];
-        // result = -2 * result + vertex_norm;
-        result = -result;
-        return result;
-    }
-    // L2
-    //     dataf Searching::compute_distance_with_norm(
+    //     distf Searching::compute_distance_with_norm(
     //         const dataf *v_data,
     //         const dataf *q_data,
-    //         const dataf vertex_norm) const
+    //         const distf vertex_norm) const
     //     {
     //         float result = 0;
-    // #define AVX_L2SQR(addr1, addr2, dest, tmp1, tmp2) \
-//     tmp1 = _mm256_loadu_ps(addr1);                \
-//     tmp2 = _mm256_loadu_ps(addr2);                \
-//     tmp1 = _mm256_sub_ps(tmp1, tmp2);             \
-//     tmp1 = _mm256_mul_ps(tmp1, tmp1);             \
-//     dest = _mm256_add_ps(dest, tmp1);
-
+    // #define AVX_DOT(addr1, addr2, dest, tmp1, tmp2) \
+    //     tmp1 = _mm256_loadu_ps(addr1);              \
+    //     tmp2 = _mm256_loadu_ps(addr2);              \
+    //     tmp1 = _mm256_mul_ps(tmp1, tmp2);           \
+    //     dest = _mm256_add_ps(dest, tmp1);
     //         __m256 sum;
     //         __m256 l0, l1;
     //         __m256 r0, r1;
@@ -455,25 +381,97 @@ namespace PANNS
     //         unsigned DD = D - DR;
     //         const float *l = v_data;
     //         const float *r = q_data;
+    //         //    const float *l = (float *) (opt_nsg_graph_ + vertex_id * vertex_bytes_ + sizeof(distf));
+    //         //    const float *r = queries_load_ + query_id * dimension_;
     //         const float *e_l = l + DD;
     //         const float *e_r = r + DD;
     //         float unpack[8] __attribute__((aligned(32))) = {0, 0, 0, 0, 0, 0, 0, 0};
-
-    //         sum = _mm256_loadu_ps(unpack);
+    //         sum = _mm256_load_ps(unpack);
+    //         //    sum = _mm256_loadu_ps(unpack);
     //         if (DR)
     //         {
-    //             AVX_L2SQR(e_l, e_r, sum, l0, r0);
+    //             AVX_DOT(e_l, e_r, sum, l0, r0);
     //         }
 
     //         for (unsigned i = 0; i < DD; i += 16, l += 16, r += 16)
     //         {
-    //             AVX_L2SQR(l, r, sum, l0, r0);
-    //             AVX_L2SQR(l + 8, r + 8, sum, l1, r1);
+    //             AVX_DOT(l, r, sum, l0, r0);
+    //             AVX_DOT(l + 8, r + 8, sum, l1, r1);
     //         }
     //         _mm256_store_ps(unpack, sum);
+    //         //    _mm256_storeu_ps(unpack, sum);
     //         result = unpack[0] + unpack[1] + unpack[2] + unpack[3] + unpack[4] + unpack[5] + unpack[6] + unpack[7];
+    //         // result = -2 * result + vertex_norm;
+    //         result = -result;
     //         return result;
     //     }
+
+    // L2
+    dataf Searching::compute_distance_with_norm(
+        const dataf *v_data,
+        const dataf *q_data,
+        const dataf vertex_norm) const
+    {
+        float result = 0;
+#define AVX_L2SQR(addr1, addr2, dest, tmp1, tmp2) \
+    tmp1 = _mm256_loadu_ps(addr1);                \
+    tmp2 = _mm256_loadu_ps(addr2);                \
+    tmp1 = _mm256_sub_ps(tmp1, tmp2);             \
+    tmp1 = _mm256_mul_ps(tmp1, tmp1);             \
+    dest = _mm256_add_ps(dest, tmp1);
+
+        __m256 sum;
+        __m256 l0, l1;
+        __m256 r0, r1;
+        unsigned D = (dimension_ + 7) & ~7U;
+        unsigned DR = D % 16;
+        unsigned DD = D - DR;
+        const float *l = v_data;
+        const float *r = q_data;
+        const float *e_l = l + DD;
+        const float *e_r = r + DD;
+        float unpack[8] __attribute__((aligned(32))) = {0, 0, 0, 0, 0, 0, 0, 0};
+
+        sum = _mm256_loadu_ps(unpack);
+        if (DR)
+        {
+            AVX_L2SQR(e_l, e_r, sum, l0, r0);
+        }
+
+        for (unsigned i = 0; i < DD; i += 16, l += 16, r += 16)
+        {
+            AVX_L2SQR(l, r, sum, l0, r0);
+            AVX_L2SQR(l + 8, r + 8, sum, l1, r1);
+        }
+        _mm256_store_ps(unpack, sum);
+        result = unpack[0] + unpack[1] + unpack[2] + unpack[3] + unpack[4] + unpack[5] + unpack[6] + unpack[7];
+        return result;
+    }
+
+    // uint8 L2 sqr
+    // distf Searching::compute_distance_with_norm(
+    //     const dataf *pX,
+    //     const dataf *pY,
+    //     const dataf vertex_norm) const
+    // {
+    //     // 2. 使用整数累加器，避免浮点误差和性能损耗
+    //     // uint32_t 足以容纳大多数情况下的平方和 (最大约 40亿)
+    //     // 如果维度特别特别大 (超过 65000 维)，可以改用 uint64_t
+    //     uint32_t sum = 0;
+
+    //     // 3. 循环计算
+    //     for (unsigned i = 0; i < dimension_; ++i)
+    //     {
+    //         // 关键点：先转为 int 再相减
+    //         // 比如 5 - 10 = -5，平方后是 25。
+    //         // 如果不转 int 直接用 uint8 相减，5 - 10 会变成 251 (溢出)，平方后结果就错了。
+    //         int diff = (int)pX[i] - (int)pY[i];
+    //         sum += diff * diff;
+    //     }
+
+    //     // 4. 最后转回 float 返回（如果你的接口要求返回 float）
+    //     return (float)sum;
+    // }
 
     //
     // The difference from insert_into_queue is that add_into_queue will increase the queue size by 1.
@@ -1342,20 +1340,12 @@ namespace PANNS
             //        std::fill(local_queues_sizes.begin(), local_queues_sizes.end(), 0);
             //        std::fill(threads_computations_.begin(), threads_computations_.end(), 0);
         }
-//    {//test
-//        printf("query_id: %u "
-//               "iter: %u\n",
-//               query_id,
-//               iter);
-//    }
-//    {//test
-//        for (idi k_i = 0; k_i < K; ++k_i) {
-//            printf("%u\n", set_K[k_i]);
-//        }
-//        if (1000 == query_id) {
-//            exit(1);
-//        }
-//    }
+        //    {//test
+        //        printf("query_id: %u "
+        //               "iter: %u\n",
+        //               query_id,
+        //               iter);
+        //    }
 #ifdef BREAKDOWN_PRINT
         time_seq_ += WallTimer::get_time_mark();
 #endif

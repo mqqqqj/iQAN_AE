@@ -147,7 +147,7 @@ namespace PANNS
         }
 
         static void load_fbin(const char *filename,
-                              dataf *&data,
+                              float *&data,
                               idi &number,
                               uint64_t &dimension)
         {
@@ -160,11 +160,56 @@ namespace PANNS
             }
             in.read((char *)&num, 4);
             in.read((char *)&dim, 4);
-            data = new float[(size_t)num * (size_t)dim];
-            for (size_t i = 0; i < num; i++)
+            size_t total_elements = (size_t)num * (size_t)dim;
+            data = new float[total_elements];
+            in.read((char *)data, total_elements * 4);
+            in.close();
+            number = num;
+            dimension = dim;
+        }
+
+        static void load_u8bin(const char *filename,
+                               uint8_t *&data,
+                               idi &number,
+                               uint64_t &dimension)
+        {
+            unsigned num = 0, dim = 0;
+            std::ifstream in(filename, std::ios::binary);
+            if (!in.is_open())
             {
-                in.read((char *)(data + i * dim), dim * 4);
+                fprintf(stderr, "Error: cannot open file %s\n", filename);
+                exit(EXIT_FAILURE);
             }
+            in.read((char *)&num, 4);
+            in.read((char *)&dim, 4);
+            size_t total_elements = (size_t)num * (size_t)dim;
+            data = new uint8_t[total_elements];
+            in.read((char *)data, total_elements);
+            in.close();
+            number = num;
+            dimension = dim;
+        }
+
+        static void load_u8bin_slice(const char *filename,
+                                     uint8_t *&data,
+                                     idi &number,
+                                     uint64_t &dimension,
+                                     unsigned want_num)
+        {
+            unsigned num = 0, dim = 0;
+            std::ifstream in(filename, std::ios::binary);
+            if (!in.is_open())
+            {
+                fprintf(stderr, "Error: cannot open file %s\n", filename);
+                exit(EXIT_FAILURE);
+            }
+            in.read((char *)&num, 4);
+            in.read((char *)&dim, 4);
+            fprintf(stderr, "Read num:%u, want num:%u.\n", num, want_num);
+            num = want_num;
+            size_t total_elements = (size_t)num * (size_t)dim;
+            data = new uint8_t[total_elements];
+            in.read((char *)data, total_elements);
             in.close();
             number = num;
             dimension = dim;

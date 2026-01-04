@@ -85,11 +85,11 @@ int main(int argc, char **argv)
     //    }
     unsigned data_dimension = engine.dimension_;
     unsigned points_num = engine.num_v_;
-
-    if (engine.num_queries_ > 10000)
+    std::cout << data_dimension << " " << points_num << std::endl;
+    if (engine.num_queries_ > 1000)
     {
-        std::cout << "only use first 10k query" << std::endl;
-        engine.num_queries_ = 10000;
+        std::cout << "only use first 1k query" << std::endl;
+        engine.num_queries_ = 1000;
     }
     unsigned query_num = engine.num_queries_;
     if (true_nn_list.size() > query_num)
@@ -109,6 +109,7 @@ int main(int argc, char **argv)
     {
         L_list.push_back(std::stoi(L_val));
     }
+
     printf("L,Throughput,latency,recall,p95recall,p99recall,p95latency,p99latency,total_dist_comps,max_dist_comps,hops,avg_merge,t_expand(s.),t_merge(s.),t_seq(s.),t_p_expand(%%),t_p_merge(%%),t_p_seq(%%)\n");
     for (int L : L_list)
     {
@@ -162,7 +163,7 @@ int main(int argc, char **argv)
                     for (unsigned q_i = 0; q_i < query_num; ++q_i)
                     {
                         auto start_time = std::chrono::high_resolution_clock::now();
-                        engine.para_search_PSS_v5_dist_thresh_profiling(
+                        engine.para_search_PSS_v5_dist_thresh_profiling_nosync(
                             q_i,
                             K,
                             L_master,
