@@ -4,7 +4,7 @@ cmake-build*/
 venv/
 build/
 local_stuff/
-
+results/
 # VSCode
 .vscode/
 
