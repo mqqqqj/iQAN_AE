@@ -46,6 +46,26 @@ void usage(int argc, char *argv[])
     }
 }
 
+unsigned get_L_low(unsigned L, unsigned num_thread)
+{
+    if (L < 100)
+        return L;
+    else if (L / num_thread < 100)
+        return 100;
+    else
+        return L / num_thread;
+}
+
+unsigned get_X_low(unsigned L, unsigned num_thread)
+{
+    // float f_L = L;
+    // float f_T = num_thread;
+    if (L / num_thread < 1)
+        return 1;
+    else
+        return L / num_thread;
+}
+
 int main(int argc, char **argv)
 {
     usage(argc, argv);
@@ -109,18 +129,19 @@ int main(int argc, char **argv)
     {
         L_list.push_back(std::stoi(L_val));
     }
-    printf("L,Throughput,latency,recall,p95recall,p99recall,p95latency,p99latency,total_dist_comps,max_dist_comps,hops,avg_merge,t_expand(s.),t_merge(s.),t_seq(s.),t_p_expand(%%),t_p_merge(%%),t_p_seq(%%)\n");
+    printf("L,X,Throughput,latency,recall,p95recall,p99recall,p95latency,p99latency,total_dist_comps,max_dist_comps,hops,avg_merge,t_expand(s.),t_merge(s.),t_seq(s.),t_p_expand(%%),t_p_merge(%%),t_p_seq(%%)\n");
     for (int L : L_list)
     {
-        const unsigned L_master_low = L;
-        const unsigned L_master_up = L;
-        const unsigned L_master_step = 8;
+        L = L * num_threads;
+        const unsigned L_master_low = get_L_low(L, num_threads);
+        const unsigned L_master_up = get_L_low(L, num_threads) + 8;
+        const unsigned L_master_step = 2;
         const unsigned L_local_low = 0;
         const unsigned L_local_up = 0;
         const unsigned L_local_step = 0;
-        const unsigned X_low = 1;
-        const unsigned X_up = 1;
-        const unsigned X_step = 8;
+        const unsigned X_low = get_X_low(L, num_threads);
+        const unsigned X_up = get_X_low(L, num_threads) + 8;
+        const unsigned X_step = 2;
         const unsigned I_thresh_low = 0;
         const unsigned I_thresh_up = 0;
         const unsigned I_thresh_step = 0;
@@ -211,8 +232,10 @@ int main(int argc, char **argv)
                     float p95recall = recalls[recalls.size() * 0.05];
                     float p99recall = recalls[recalls.size() * 0.01];
                     { // Basic output
-                        printf("%u,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f\n",
-                               L_master, query_num / diff.count(),
+                        printf("%u,%u,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f\n",
+                               L_master,
+                               subsearch_iterations,
+                               query_num / diff.count(),
                                avg_latency,
                                avg_recall,
                                p95recall,
