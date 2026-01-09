@@ -10,4 +10,4 @@ taskset -c 0-$((thread_num - 1)) PSS_v5_distance_threshold_profiling \
 /SSD/Text-to-Image/base.10M.fbin \
 /SSD/Text-to-Image/query.10k.fbin \
 /SSD/models/nsg/t2i10m.L2000.R64.C2000.nsg \
-100 output.ivecs /SSD/Text-to-Image/gt.10K_10M.bin $thread_num "$L_str" | tee -a /home/mqj/proj/ANNSLib/experiments/revision/t2i_8t_iqan_tuned.csv
+100 output.ivecs /SSD/Text-to-Image/gt.10K_10M.bin $thread_num "$L_str" | tee -a /home/mqj/proj/ANNSLib/experiments/revision/t2i_8t_1stepsync.csv

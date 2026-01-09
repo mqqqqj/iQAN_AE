@@ -10,4 +10,4 @@ taskset -c 0-$((thread_num - 1)) PSS_v5_distance_threshold_profiling \
 /SSD/WebVid/webvid.base.2.5M.fbin \
 /SSD/WebVid/webvid.query.10k.fbin \
 /SSD/models/nsg/webvid.L2000.R64.C2000.nsg \
-100 output.ivecs /SSD/WebVid/gt.query.top100.bin $thread_num "$L_str" | tee -a /home/mqj/proj/ANNSLib/experiments/revision/webvid_8t_iqan_tuned.csv
+100 output.ivecs /SSD/WebVid/gt.query.top100.bin $thread_num "$L_str" | tee -a /home/mqj/proj/ANNSLib/experiments/revision/webvid_8t_1stepsync.csv

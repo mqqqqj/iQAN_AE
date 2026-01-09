@@ -106,10 +106,10 @@ int main(int argc, char **argv)
     unsigned data_dimension = engine.dimension_;
     unsigned points_num = engine.num_v_;
 
-    if (engine.num_queries_ > 1000)
+    if (engine.num_queries_ > 10000)
     {
-        std::cout << "only use first 1k query" << std::endl;
-        engine.num_queries_ = 1000;
+        std::cout << "only use first 10k query" << std::endl;
+        engine.num_queries_ = 10000;
     }
     unsigned query_num = engine.num_queries_;
     if (true_nn_list.size() > query_num)
@@ -129,18 +129,31 @@ int main(int argc, char **argv)
     {
         L_list.push_back(std::stoi(L_val));
     }
+    L_list.clear();
+    int new_L = 100;
+    while (new_L < 1000)
+    {
+        L_list.push_back(new_L);
+        new_L += 50;
+    }
+    while (new_L <= 6000)
+    {
+        L_list.push_back(new_L);
+        new_L += 100;
+    }
     printf("L,X,Throughput,latency,recall,p95recall,p99recall,p95latency,p99latency,total_dist_comps,max_dist_comps,hops,avg_merge,t_expand(s.),t_merge(s.),t_seq(s.),t_p_expand(%%),t_p_merge(%%),t_p_seq(%%)\n");
     for (int L : L_list)
     {
-        L = L * num_threads;
-        const unsigned L_master_low = get_L_low(L, num_threads);
-        const unsigned L_master_up = get_L_low(L, num_threads) + 8;
+        // L = L * num_threads;
+        const unsigned L_master_low = L;
+        const unsigned L_master_up = L;
+        ;
         const unsigned L_master_step = 2;
         const unsigned L_local_low = 0;
         const unsigned L_local_up = 0;
         const unsigned L_local_step = 0;
-        const unsigned X_low = get_X_low(L, num_threads);
-        const unsigned X_up = get_X_low(L, num_threads) + 8;
+        const unsigned X_low = 1;
+        const unsigned X_up = 1;
         const unsigned X_step = 2;
         const unsigned I_thresh_low = 0;
         const unsigned I_thresh_up = 0;
