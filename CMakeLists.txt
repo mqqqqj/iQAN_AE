@@ -28,7 +28,7 @@ if (${CMAKE_BUILD_TYPE} MATCHES "Debug")
 endif()
 if (${CMAKE_BUILD_TYPE} MATCHES "Release")
 #     set(CXX_OPTION ${CXX_OPTION} -Wall -Wextra -pedantic -Werror)
-set(CXX_OPTION ${CXX_OPTION} -Ofast -lboost -march=native -mavx -mavx2 -msse4.2 -fpic -w)
+set(CXX_OPTION ${CXX_OPTION} -g -Ofast -lboost -march=native -mavx -mavx2 -msse4.2 -fpic -w)
 endif()
 
 set(CXX_OPTION ${CXX_OPTION} -march=native)
