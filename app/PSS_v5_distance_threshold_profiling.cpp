@@ -146,8 +146,8 @@ int main(int argc, char **argv)
     {
         const unsigned L_master_low = L;
         const unsigned L_master_up = L;
-        const unsigned X_low = L;
-        const unsigned X_up = L;
+        const unsigned X_low = 1;
+        const unsigned X_up = 1;
         // L = L * num_threads;
         // const unsigned L_master_low = get_L_low(L, num_threads);
         // const unsigned L_master_up = get_L_low(L, num_threads) + 8;
