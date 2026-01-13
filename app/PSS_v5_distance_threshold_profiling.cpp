@@ -144,15 +144,15 @@ int main(int argc, char **argv)
     printf("L,X,Throughput,latency,recall,p95recall,p99recall,p95latency,p99latency,total_dist_comps,max_dist_comps,hops,avg_merge,t_expand(s.),t_merge(s.),t_seq(s.),t_p_expand(%%),t_p_merge(%%),t_p_seq(%%)\n");
     for (int L : L_list)
     {
-        const unsigned L_master_low = L;
-        const unsigned L_master_up = L;
-        const unsigned X_low = 1;
-        const unsigned X_up = 1;
-        // L = L * num_threads;
-        // const unsigned L_master_low = get_L_low(L, num_threads);
-        // const unsigned L_master_up = get_L_low(L, num_threads) + 8;
-        // const unsigned X_low = get_X_low(L, num_threads);
-        // const unsigned X_up = get_X_low(L, num_threads) + 8;
+        // const unsigned L_master_low = L;
+        // const unsigned L_master_up = L;
+        // const unsigned X_low = 1;
+        // const unsigned X_up = 1;
+        L = L * num_threads;
+        const unsigned L_master_low = get_L_low(L, num_threads);
+        const unsigned L_master_up = get_L_low(L, num_threads);
+        const unsigned X_low = get_X_low(L, num_threads);
+        const unsigned X_up = get_X_low(L, num_threads);
         const unsigned L_master_step = 2;
         const unsigned L_local_low = 0;
         const unsigned L_local_up = 0;
@@ -199,7 +199,7 @@ int main(int argc, char **argv)
                     for (unsigned q_i = 0; q_i < query_num; ++q_i)
                     {
                         auto start_time = std::chrono::high_resolution_clock::now();
-                        engine.para_search_PSS_v5_dist_thresh_profiling_nosync(
+                        engine.para_search_PSS_v5_dist_thresh_profiling(
                             q_i,
                             K,
                             L_master,
