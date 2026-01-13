@@ -285,6 +285,20 @@ namespace PANNS
             boost::dynamic_bitset<> &is_visited,
             const idi subsearch_iterations);
         //            std::vector<idi> &top_m_candidates);
+        void para_search_PSS_v5_dist_thresh_profiling_nosync_smallefs(
+            //        const idi M,
+            //        const idi worker_M,
+            const idi query_id,
+            const idi K,
+            const idi L,
+            std::vector<Candidate> &set_L,
+            const std::vector<idi> &init_ids,
+            std::vector<idi> &set_K,
+            const idi local_queue_capacity, // Maximum size of local queue
+            const std::vector<idi> &local_queues_starts,
+            std::vector<idi> &local_queues_sizes, // Sizes of local queue
+            boost::dynamic_bitset<> &is_visited,
+            const idi subsearch_iterations);
 
     }; // Class Searching
 

@@ -184,14 +184,14 @@ int main(int argc, char **argv)
                     for (unsigned q_i = 0; q_i < query_num; ++q_i)
                     {
                         auto start_time = std::chrono::high_resolution_clock::now();
-                        engine.para_search_PSS_v5_dist_thresh_profiling_nosync(
+                        engine.para_search_PSS_v5_dist_thresh_profiling_nosync_smallefs(
                             q_i,
                             K,
                             L_master,
                             set_L,
                             init_ids,
                             set_K_list[q_i],
-                            L_local,
+                            K,
                             local_queues_starts,
                             local_queues_sizes,
                             is_visited,
