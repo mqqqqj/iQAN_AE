@@ -79,7 +79,8 @@ int main(int argc, char **argv)
 
     engine.load_data_load(argv[1]);
     engine.load_queries_load(argv[2]);
-    engine.load_nsg_graph(argv[3]);
+    // engine.load_nsg_graph(argv[3]);
+    engine.load_hnsw_graph(argv[3]);
 
     //    engine.build_opt_graph();
 
@@ -107,10 +108,8 @@ int main(int argc, char **argv)
     unsigned points_num = engine.num_v_;
 
     if (engine.num_queries_ > 1000)
-    {
-        std::cout << "only use first 1k query" << std::endl;
         engine.num_queries_ = 1000;
-    }
+
     unsigned query_num = engine.num_queries_;
     if (true_nn_list.size() > query_num)
     {
@@ -233,7 +232,8 @@ int main(int argc, char **argv)
                         {
                             for (unsigned g = 0; g < K; g++)
                             {
-                                if (set_K_list[i][j] == true_nn_list[i][g])
+                                size_t external_id = engine.internal_to_external[set_K_list[i][j]];
+                                if (external_id == true_nn_list[i][g])
                                 {
                                     correct++;
                                     break;

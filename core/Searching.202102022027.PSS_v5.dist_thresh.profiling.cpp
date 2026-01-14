@@ -164,6 +164,197 @@ namespace PANNS
     }
 
     /**
+     * Input the HNSW graph from the file.
+     * @param filename
+     */
+    void Searching::load_hnsw_graph(char *hnswfilename)
+    {
+        using std::size_t;
+
+        // 1. 打开 HNSW 索引（二进制）
+        std::ifstream in(hnswfilename, std::ios::binary);
+        if (!in.is_open())
+        {
+            std::cerr << "Error: cannot read HNSW file " << hnswfilename << " ." << std::endl;
+            exit(EXIT_FAILURE);
+        }
+
+        // 2. 按 hnswlib::saveIndex 的顺序读取头部
+        size_t offsetLevel0 = 0;
+        size_t max_elements = 0;
+        size_t cur_element_count = 0;
+        size_t size_data_per_element = 0;
+        size_t label_offset = 0;
+        size_t offsetData = 0;
+        int maxlevel = 0;
+        unsigned enterpoint_node = 0; // tableint = unsigned int
+        size_t maxM = 0;
+        size_t maxM0 = 0;
+        size_t M = 0;
+        double mult = 0.0;
+        size_t ef_construction = 0;
+
+        auto readPOD = [&](auto &x)
+        {
+            in.read(reinterpret_cast<char *>(&x), sizeof(x));
+            if (!in)
+            {
+                std::cerr << "Error: failed to read HNSW header." << std::endl;
+                exit(EXIT_FAILURE);
+            }
+        };
+
+        readPOD(offsetLevel0);
+        readPOD(max_elements);
+        readPOD(cur_element_count);
+        readPOD(size_data_per_element);
+        readPOD(label_offset);
+        readPOD(offsetData);
+        readPOD(maxlevel);
+        readPOD(enterpoint_node);
+        readPOD(maxM);
+        readPOD(maxM0);
+        readPOD(M);
+        readPOD(mult);
+        readPOD(ef_construction);
+
+        // 3. 读取 base layer 整块内存：data_level0_memory_
+        const size_t total_bytes = cur_element_count * size_data_per_element;
+        std::vector<char> base_mem(total_bytes);
+        in.read(base_mem.data(), total_bytes);
+        if (!in)
+        {
+            std::cerr << "Error: failed to read HNSW base layer." << std::endl;
+            exit(EXIT_FAILURE);
+        }
+
+        // 4. 从 HNSW 推导向量维度 dim_from_hnsw，并与当前 dimension_ 对齐
+        size_t data_size = label_offset - offsetData; // 每个点的向量字节数
+        if (data_size % sizeof(dataf) != 0)
+        {
+            std::cerr << "Error: HNSW data_size is not multiple of sizeof(dataf)." << std::endl;
+            exit(EXIT_FAILURE);
+        }
+        size_t dim_from_hnsw = data_size / sizeof(dataf);
+
+        if (dimension_ == 0)
+        {
+            // 如果框架里 dimension_ 还没设置，就直接用 HNSW 的
+            dimension_ = static_cast<unsigned>(dim_from_hnsw);
+        }
+        else if (dimension_ != static_cast<unsigned>(dim_from_hnsw))
+        {
+            std::cerr << "Error: dimension mismatch. HNSW dim = "
+                      << dim_from_hnsw << ", framework dim = " << dimension_ << std::endl;
+            exit(EXIT_FAILURE);
+        }
+
+        // 5. 设置点数、度上限、入口点
+        num_v_ = static_cast<idi>(cur_element_count);
+        ep_ = static_cast<idi>(enterpoint_node);
+
+        // HNSW 的 level0 最大度是 maxM0_，用它作为 width_
+        width_ = static_cast<unsigned>(maxM0);
+
+        // 6. 根据新 width_ 和 dimension_ 重新计算布局，并分配 opt_nsg_graph_
+        data_bytes_ = (1 + dimension_) * sizeof(dataf); // norm + 向量
+        neighbor_bytes_ = (1 + width_) * sizeof(idi);   // degree + 邻居列表
+        vertex_bytes_ = data_bytes_ + neighbor_bytes_;
+
+        if (opt_nsg_graph_)
+        {
+            free(opt_nsg_graph_);
+            opt_nsg_graph_ = nullptr;
+        }
+
+        opt_nsg_graph_ = (char *)malloc(static_cast<size_t>(num_v_) * vertex_bytes_);
+        if (!opt_nsg_graph_)
+        {
+            std::cerr << "Error: no enough memory for opt_nsg_graph_." << std::endl;
+            exit(EXIT_FAILURE);
+        }
+
+        // 7. 如果原来有 data_load_，可以释放掉；后面完全用 HNSW 里的向量
+        if (data_load_)
+        {
+            free(data_load_);
+            data_load_ = nullptr;
+        }
+
+        // 8. 准备 internal->external id 映射
+        internal_to_external.clear();
+        internal_to_external.resize(cur_element_count);
+
+        // 9. 遍历每个 internal id，写入 opt_nsg_graph_，并填映射表
+        num_e_ = 0;
+        char *base_location = opt_nsg_graph_;
+
+        for (size_t i = 0; i < cur_element_count; ++i)
+        {
+            char *base_i = base_mem.data() + i * size_data_per_element;
+
+            // 9.1 取出向量数据（HNSW 的 getDataByInternalId）
+            dataf *vec_ptr = reinterpret_cast<dataf *>(base_i + offsetData);
+
+            // 先写 norm + 向量到 opt_nsg_graph_
+            // Norm
+            distf norm = compute_norm(vec_ptr); // 保证 compute_norm 支持 dataf* 输入
+            std::memcpy(base_location, &norm, sizeof(distf));
+
+            // Data
+            std::memcpy(base_location + sizeof(distf),
+                        vec_ptr,
+                        static_cast<size_t>(dimension_) * sizeof(dataf));
+
+            base_location += data_bytes_;
+
+            // 9.2 解析 level0 邻接表（HNSW 的 get_linklist0）
+            char *ll0_ptr = base_i + offsetLevel0;
+
+            // 注意：linklistsizeint 在 hnsw 里是 unsigned int，
+            // getListCount 实际返回的是 unsigned short，前 2 字节是邻居数
+            unsigned short degree = *reinterpret_cast<unsigned short *>(ll0_ptr);
+
+            // 邻居 id 数组紧跟在 linklistsizeint 后面（sizeof(unsigned int)）
+            unsigned *neighbors =
+                reinterpret_cast<unsigned *>(ll0_ptr + sizeof(unsigned)); // sizeof(linklistsizeint)
+
+            // 统计边数
+            num_e_ += degree;
+
+            // 9.3 写邻居到 opt_nsg_graph_（格式：degree + degree 个邻居，剩余空间随意）
+            idi deg_i = static_cast<idi>(degree);
+            std::memcpy(base_location, &deg_i, sizeof(idi)); // 邻居数量
+
+            // 写前 degree 个邻居（内部 id）
+            std::memcpy(base_location + sizeof(idi),
+                        neighbors,
+                        static_cast<size_t>(degree) * sizeof(idi));
+
+            // 如果你想把后面的空间清零（可选）
+            // size_t remain = (width_ - degree) * sizeof(idi);
+            // if (remain > 0) {
+            //     std::memset(base_location + sizeof(idi) + degree * sizeof(idi), 0, remain);
+            // }
+
+            base_location += neighbor_bytes_;
+
+            // 9.4 解析 external label，填映射表
+            size_t *label_ptr = reinterpret_cast<size_t *>(base_i + label_offset);
+            internal_to_external[i] = *label_ptr;
+        }
+
+        // 10. 简单检查
+        if (base_location != opt_nsg_graph_ + static_cast<size_t>(num_v_) * vertex_bytes_)
+        {
+            std::cerr << "Error: written bytes mismatch in opt_nsg_graph_." << std::endl;
+            exit(EXIT_FAILURE);
+        }
+        free(data_load_);
+        data_load_ = nullptr;
+    }
+
+    /**
      * Load those true top-K neighbors (ground truth) of queries
      * @param filename
      * @param[out] true_nn_list
