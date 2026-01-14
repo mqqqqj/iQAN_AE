@@ -1761,7 +1761,7 @@ namespace PANNS
                     idi cand_id;
                     idi r;
                     idi worker_iter = 0;
-                    while (k_uc < local_queue_size)
+                    while (k_uc < L)
                     {
                         auto &cand = set_L[local_queue_start + k_uc];
                         if (!cand.is_checked_)

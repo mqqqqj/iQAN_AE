@@ -166,21 +166,25 @@ int main(int argc, char **argv)
                     std::vector<std::vector<PANNS::idi>> set_K_list(query_num);
                     for (unsigned i = 0; i < query_num; i++)
                         set_K_list[i].resize(K);
-
-                    std::vector<PANNS::idi> init_ids(L_master);
+                    // std::vector<PANNS::idi> init_ids(L_master);
+                    std::vector<PANNS::idi> init_ids(K);
                     boost::dynamic_bitset<> is_visited(points_num);
-                    std::vector<PANNS::Candidate> set_L((num_threads - 1) * L_local + L_master);
+                    // std::vector<PANNS::Candidate> set_L((num_threads - 1) * L_local + L_master);
+                    std::vector<PANNS::Candidate> set_L((num_threads - 1) * K + K);
                     std::vector<PANNS::idi> local_queues_sizes(num_threads, 0);
                     std::vector<PANNS::idi> local_queues_starts(num_threads);
+                    // for (int q_i = 0; q_i < num_threads; ++q_i)
+                    // {
+                    //     local_queues_starts[q_i] = q_i * L_local;
+                    // }
                     for (int q_i = 0; q_i < num_threads; ++q_i)
                     {
-                        local_queues_starts[q_i] = q_i * L_local;
+                        local_queues_starts[q_i] = q_i * K;
                     }
-                    //                std::vector<PANNS::idi> top_m_candidates(num_threads);
                     std::vector<float> latency_list(query_num); // 单位：毫秒
                     auto s = std::chrono::high_resolution_clock::now();
-                    //                engine.prepare_init_ids(init_ids, L_local);
-                    engine.prepare_init_ids(init_ids, L_master);
+                    // engine.prepare_init_ids(init_ids, L_master);
+                    engine.prepare_init_ids(init_ids, K);
                     for (unsigned q_i = 0; q_i < query_num; ++q_i)
                     {
                         auto start_time = std::chrono::high_resolution_clock::now();
