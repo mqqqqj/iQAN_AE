@@ -40,6 +40,7 @@ namespace PANNS
         idi width_ = 0; // NSG largest degree
         idi ep_ = 0;    // Start point
         std::vector<std::vector<PANNS::idi>> groundtruth;
+        std::vector<size_t> internal_to_external;
         float ub_ratio = 0;
         //    std::vector<dataf> data_load_;
         //    std::vector<dataf> queries_load_;
@@ -225,6 +226,7 @@ namespace PANNS
         void load_data_load(char *filename);
         void load_queries_load(char *filename);
         void load_nsg_graph(char *filename);
+        void load_hnsw_graph(char *filename);
         //    void build_opt_graph();
         void prepare_init_ids(
             std::vector<unsigned> &init_ids,

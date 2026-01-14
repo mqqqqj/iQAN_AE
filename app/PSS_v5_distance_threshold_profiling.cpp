@@ -79,7 +79,8 @@ int main(int argc, char **argv)
 
     engine.load_data_load(argv[1]);
     engine.load_queries_load(argv[2]);
-    engine.load_nsg_graph(argv[3]);
+    // engine.load_nsg_graph(argv[3]);
+    engine.load_hnsw_graph(argv[3]);
 
     //    engine.build_opt_graph();
 
@@ -188,7 +189,7 @@ int main(int argc, char **argv)
                     for (unsigned q_i = 0; q_i < query_num; ++q_i)
                     {
                         auto start_time = std::chrono::high_resolution_clock::now();
-                        engine.para_search_PSS_v5_dist_thresh_profiling_nosync_smallefs(
+                        engine.para_search_PSS_v5_dist_thresh_profiling(
                             q_i,
                             K,
                             L_master,
