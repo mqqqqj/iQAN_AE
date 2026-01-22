@@ -125,15 +125,11 @@ int main(int argc, char **argv)
     printf("L,X,Throughput,latency,recall,p95recall,p99recall,p95latency,p99latency,total_dist_comps,max_dist_comps,hops,avg_merge,t_expand(s.),t_merge(s.),t_seq(s.),t_p_expand(%%),t_p_merge(%%),t_p_seq(%%)\n");
     for (int L : L_list)
     {
-        // const unsigned L_master_low = L;
-        // const unsigned L_master_up = L;
-        // const unsigned X_low = L;
-        // const unsigned X_up = L;
         L = L * num_threads;
         const unsigned L_master_low = get_L_low(L, num_threads);
-        const unsigned L_master_up = get_L_low(L, num_threads);
+        const unsigned L_master_up = get_L_low(L, num_threads) + 8;
         const unsigned X_low = get_X_low(L, num_threads);
-        const unsigned X_up = get_X_low(L, num_threads);
+        const unsigned X_up = get_X_low(L, num_threads) + 8;
         const unsigned L_master_step = 2;
         const unsigned L_local_low = 0;
         const unsigned L_local_up = 0;
@@ -213,8 +209,8 @@ int main(int argc, char **argv)
                         {
                             for (unsigned g = 0; g < K; g++)
                             {
-                                size_t external_id = engine.internal_to_external[set_K_list[i][j]];
-                                if (external_id == true_nn_list[i][g])
+                                // size_t external_id = engine.internal_to_external[set_K_list[i][j]];
+                                if (set_K_list[i][j] == true_nn_list[i][g])
                                 {
                                     correct++;
                                     break;
