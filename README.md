@@ -18,6 +18,8 @@ bash scripts/tuned_iqan.sh
 bash scripts/no_sync.sh
 ```
 
+To obtain the experimental results on the SIFT100M dataset, you need to switch to the u8 branch and run the above two scripts, because the data type of the SIFT100M dataset is uint8.
+
 After the scripts have finished executing, you can compare the max-t NDC outputs by running the script below to verify the findings:
 ```
 python scripts/plot_nosync_vs_iqan.py
