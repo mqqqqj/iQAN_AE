@@ -96,6 +96,17 @@ target_link_libraries(
         PRIVATE ${Boost_LIBRARIES} OpenMP::OpenMP_CXX)
 
 add_executable(
+        no_sync
+        app/no_sync.cpp
+        core/Searching.202102022027.PSS_v5.dist_thresh.profiling.cpp)
+target_compile_options(
+        no_sync
+        PRIVATE ${CXX_OPTION})
+target_link_libraries(
+        no_sync
+        PRIVATE ${Boost_LIBRARIES} OpenMP::OpenMP_CXX)
+
+add_executable(
         PSS_v5_LG_distance_threshold_profiling
         app/PSS_v5_LG_distance_threshold_profiling.cpp
         core/Searching.202102031939.PSS_v5.large_graph.dist_thresh.profiling.cpp)
