@@ -69,7 +69,7 @@ def plot_max_ndc_vs_recall():
                     valid_labels.append(config['label'])
                 
             except FileNotFoundError:
-                print(f"❌ 找不到: {file_name}")
+                print(f"{file_name} not found.")
             except KeyError:
                 pass
 
