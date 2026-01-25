@@ -18,7 +18,6 @@ plt.rcParams["lines.linewidth"] = 3.0
 plt.rcParams["lines.markersize"] = 10
 plt.rcParams["axes.linewidth"] = 1.5
 
-# === 2. 配置参数 ===
 datasets = ["deep100m", "sift100m", "glove200", "webvid", "laion10m"]
 datasets_title = ["DEEP100M", "SIFT100M", "Glove200", "WebVid2.5M", "LAION10M"]
 
